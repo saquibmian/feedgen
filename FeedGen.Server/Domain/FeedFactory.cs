@@ -53,6 +53,7 @@ namespace FeedGen.Server.Domain {
                 Generator = "FeedGen",
                 ImageUrl = new Uri( $"{_config.ExternalAddress}/media/{dir}/image.jpg" ),
             };
+            feed.Authors.Add( new SyndicationPerson( "saquib.mian@gmail.com" ) );
             return feed;
         }
     }
