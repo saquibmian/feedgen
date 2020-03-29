@@ -4,10 +4,9 @@ using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.ServiceModel.Syndication;
-using System.Xml.Serialization;
+using System.Text.Json;
 
 namespace FeedGen.Server.Domain {
-    [XmlRoot( "rss" )]
     public class FeedFactory {
         private static readonly ISet<string> s_allowedExtensions = ImmutableHashSet.Create(
             ".mp3"
@@ -18,30 +17,41 @@ namespace FeedGen.Server.Domain {
             _config = config;
         }
 
-        public SyndicationFeed Create( string dir ) {
-            var title = File.ReadAllText( Path.Combine( _config.RootDirectory, dir, "title.txt" ) );
-            var description = File.ReadAllText( Path.Combine( _config.RootDirectory, dir, "description.txt" ) );
-            var items = Directory.EnumerateFiles( Path.Combine( _config.RootDirectory, dir ) )
+        public SyndicationFeed? Create( string dir ) {
+            var podcastDir = Path.Combine( _config.RootDirectory, dir );
+            if (!Directory.Exists( podcastDir )) {
+                return null;
+            }
+
+            var feedInfo = JsonSerializer.Deserialize<FeedInfo>(
+                File.ReadAllText( Path.Combine( podcastDir, "feed.json" ) ),
+                new JsonSerializerOptions {
+                    PropertyNameCaseInsensitive = true,
+                }
+            );
+
+            var items = Directory.EnumerateFiles( podcastDir )
                 .Where( file => s_allowedExtensions.Contains( Path.GetExtension( file ) ) )
                 .Select( file => new FileInfo( file ) )
                 .Select( file => {
                     var fullUrl = $"{_config.ExternalAddress}/media/{dir}/{file.Name}";
                     return new SyndicationItem(
                         title: file.Name,
-                         content: SyndicationContent.CreateUrlContent( new Uri( fullUrl ), "audio/mpeg" ),
-                         itemAlternateLink: new Uri( fullUrl ),
-                         id: fullUrl,
-                          lastUpdatedTime: file.CreationTimeUtc
+                        content: SyndicationContent.CreateUrlContent( new Uri( fullUrl ), "audio/mpeg" ),
+                        itemAlternateLink: new Uri( fullUrl ),
+                        id: fullUrl,
+                        lastUpdatedTime: file.CreationTimeUtc
                     );
                 } );
 
             var feed = new SyndicationFeed(
-                title,
-                description,
+                feedInfo.Title,
+                feedInfo.Description,
                 new Uri( $"{_config.ExternalAddress}/feed/{dir}.xml" ),
                 items
             ) {
                 Generator = "FeedGen",
+                ImageUrl = new Uri( $"{_config.ExternalAddress}/media/{dir}/image.jpg" ),
             };
             return feed;
         }
