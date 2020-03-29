@@ -1,0 +1,21 @@
+name: Main
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v2
+    - name: Build and publish feedgen
+      uses: elgohr/Publish-Docker-Github-Action@master
+      with:
+        name: r.home.saquib.me/feedgen
+        username: saquib
+        password: ${{ secrets.REGISTRY_PASSWORD }}
+        registry: r.home.saquib.me
+        dockerfile: Dockerfile
