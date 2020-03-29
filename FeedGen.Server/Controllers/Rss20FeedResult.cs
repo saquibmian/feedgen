@@ -17,33 +17,32 @@ namespace FeedGen.Server.Controllers {
         }
 
         public override void ExecuteResult( ActionContext context ) {
-            using var ms = new MemoryStream();
-
-            using (var writer = XmlWriter.Create( ms )) {
-                _formatter.WriteTo( writer );
-            }
-
-            ms.Position = 0;
+            using var stream = BuildFeed();
             context.HttpContext.Response.StatusCode = 200;
             context.HttpContext.Response.ContentType = "application/xml";
-            context.HttpContext.Response.ContentLength = ms.Length;
+            context.HttpContext.Response.ContentLength = stream.Length;
 
-            ms.CopyTo( context.HttpContext.Response.Body );
+            stream.CopyTo( context.HttpContext.Response.Body );
         }
 
         public override Task ExecuteResultAsync( ActionContext context ) {
-            using var ms = new MemoryStream();
+            using var stream = BuildFeed();
+            context.HttpContext.Response.StatusCode = 200;
+            context.HttpContext.Response.ContentType = "application/xml";
+            context.HttpContext.Response.ContentLength = stream.Length;
+
+            return stream.CopyToAsync( context.HttpContext.Response.Body );
+        }
+
+        private Stream BuildFeed() {
+            var ms = new MemoryStream();
 
             using (var writer = XmlWriter.Create( ms )) {
                 _formatter.WriteTo( writer );
             }
 
             ms.Position = 0;
-            context.HttpContext.Response.StatusCode = 200;
-            context.HttpContext.Response.ContentType = "application/xml";
-            context.HttpContext.Response.ContentLength = ms.Length;
-
-            return ms.CopyToAsync( context.HttpContext.Response.Body );
+            return ms;
         }
     }
 }
