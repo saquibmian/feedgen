@@ -7,17 +7,20 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace FeedGen.Server.Controllers {
     public class Rss20FeedResult : ActionResult {
-        private readonly SyndicationFeed _feed;
+        private readonly SyndicationFeedFormatter _formatter;
 
         public Rss20FeedResult( SyndicationFeed feed ) {
-            _feed = feed ?? throw new ArgumentNullException( nameof( feed ) );
+            _formatter = new Rss20FeedFormatter(
+                feed ?? throw new ArgumentNullException( nameof( feed ) ),
+                serializeExtensionsAsAtom: false
+            );
         }
 
         public override void ExecuteResult( ActionContext context ) {
             using var ms = new MemoryStream();
 
             using (var writer = XmlWriter.Create( ms )) {
-                new Rss20FeedFormatter( _feed ).WriteTo( writer );
+                _formatter.WriteTo( writer );
             }
 
             ms.Position = 0;
@@ -32,7 +35,7 @@ namespace FeedGen.Server.Controllers {
             using var ms = new MemoryStream();
 
             using (var writer = XmlWriter.Create( ms )) {
-                new Rss20FeedFormatter( _feed ).WriteTo( writer );
+                _formatter.WriteTo( writer );
             }
 
             ms.Position = 0;
