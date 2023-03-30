@@ -12,7 +12,7 @@ jobs:
     - name: Check out code
       uses: actions/checkout@v2
     - name: Build and publish feedgen
-      uses: elgohr/Publish-Docker-Github-Action@master
+      uses: elgohr/Publish-Docker-Github-Action@v5
       with:
         name: r.home.saquib.me/feedgen
         username: saquib
